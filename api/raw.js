@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   const id = req.url.split("/").pop().split("?")[0];
 
   if (!ua.includes("roblox")) {
-    res.status(403).send("❌ Bạn không có quyền xem code này");
+    res.status(403).send("sev skidder😂");
     return;
   }
 
