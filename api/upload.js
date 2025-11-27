@@ -17,7 +17,7 @@ export default async function handler(req, res) {
       {
         files: { [`${id}.lua`]: { content: text } },
         public: false,
-        description: "MonLuaProtector Gist"
+        description: "sevLUAprotector"
       },
       {
         headers: { Authorization: `token ${token}` }
