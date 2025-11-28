@@ -1,155 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sev AntiSkid</title>
+  <title>MonLuaProtector</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #000; }
-    #matrixCanvas { position: fixed; top:0; left:0; width:100%; height:100%; z-index:-1; }
-    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .card-shadow { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); }
-    .animate-in { animation: slideIn 0.3s ease; }
-    @keyframes slideIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
-  </style>
 </head>
+<body class="bg-gray-900 text-white flex flex-col items-center p-6">
+  <h1 class="text-3xl font-bold mb-6">MonLuaProtector</h1>
 
-<body class="text-white flex flex-col items-center p-6 min-h-screen">
+  <div class="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-lg">
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">Upload file Lua:</label>
+      <input id="fileInput" type="file" accept=".lua,.txt" class="w-full mb-3 text-black p-2 rounded" />
+      <button id="uploadBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Tạo raw từ file</button>
+    </div>
 
-<canvas id="matrixCanvas"></canvas>
+    <div class="mb-4">
+      <label class="block font-semibold mb-1">Hoặc nhập code Lua:</label>
+      <textarea id="luaText" rows="6" class="w-full text-black p-2 rounded"></textarea>
+      <button id="textBtn" class="mt-2 bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Tạo raw từ text</button>
+    </div>
 
-<!-- PASSWORD GATE -->
-<div id="passwordGate" class="fixed inset-0 flex flex-col items-center justify-center bg-black/90">
-  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 card-shadow w-full max-w-md">
-    <h1 class="text-3xl font-bold text-center text-gradient mb-6">sev AntiSkid</h1>
-    <input id="pwdInput" type="password" placeholder="Enter password..." 
-      class="w-full px-4 py-3 mb-4 rounded-lg bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-500 transition" />
-    <button onclick="checkPassword()" 
-      class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition transform active:scale-95 font-semibold">
-      <i class="fas fa-lock"></i> Unlock Panel
-    </button>
+    <div id="result" class="hidden mt-4 p-3 bg-gray-700 rounded">
+      <p>Raw link:</p>
+      <a id="rawLink" href="#" target="_blank" class="text-blue-400 underline"></a>
+      <button id="copyBtn" class="ml-2 bg-gray-600 px-2 py-1 rounded">Copy</button>
+    </div>
   </div>
-</div>
 
-<!-- MAIN UI -->
-<div id="mainUI" class="hidden w-full max-w-3xl mt-8">
+  <script>
+    async function sendData(text) {
+      const res = await fetch("/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, isText: true })
+      });
+      return res.json();
+    }
 
-  <h1 class="text-4xl font-bold text-center text-blue-400 mb-8">sev</h1>
+    document.getElementById("uploadBtn").onclick = async () => {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return alert("Chọn file trước");
+      const text = await file.text();
+      const data = await sendData(text);
+      showLink(data.raw);
+    };
 
-  <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl card-shadow w-full space-y-6">
+    document.getElementById("textBtn").onclick = async () => {
+      const text = document.getElementById("luaText").value.trim();
+      if (!text) return alert("Nhập code trước");
+      const data = await sendData(text);
+      showLink(data.raw);
+    };
 
-    <!-- Upload File -->
-    <div>
-      <label class="block font-semibold mb-2">Upload Lua file:</label>
-      <input id="fileInput" type="file" accept=".lua,.txt" class="w-full p-3 mb-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-400" />
-      <button id="uploadBtn" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 font-semibold transition transform active:scale-95">
-        Create raw from file
-      </button>
-    </div>
-
-    <!-- Input Text -->
-    <div>
-      <label class="block font-semibold mb-2">Or input Lua code:</label>
-      <textarea id="luaText" rows="6" class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 resize-y"></textarea>
-      <button id="textBtn" class="mt-3 w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 font-semibold transition transform active:scale-95">
-        Create raw from text
-      </button>
-    </div>
-
-    <!-- Result -->
-    <div id="result" class="hidden mt-4 p-4 bg-gray-800 rounded-lg animate-in space-y-2">
-      <p class="text-sm text-gray-300">Raw link:</p>
-      <input id="rawLink" readonly class="w-full p-2 rounded bg-gray-900 text-white font-mono cursor-pointer" />
-      <p class="text-sm text-gray-300">LoadString:</p>
-      <input id="loadstringCmd" readonly class="w-full p-2 rounded bg-gray-900 text-white font-mono cursor-pointer" />
-      <div class="flex gap-3 mt-3">
-        <button id="copyBtn" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition">
-          <i class="fas fa-copy"></i> Copy
-        </button>
-        <button id="copyLoadstringBtn" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 transition">
-          <i class="fas fa-copy"></i> Copy LoadString
-        </button>
-      </div>
-    </div>
-
-    <hr class="border-gray-700 my-5">
-
-    <!-- History -->
-    <div>
-      <h2 class="text-lg font-bold mb-3">History</h2>
-      <div id="historyList" class="space-y-2 text-gray-400 text-sm">
-        <p>No history yet</p>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-/* ---------------- MATRIX RED LETTERS ---------------- */
-const canvas = document.getElementById("matrixCanvas");
-const ctx = canvas.getContext("2d");
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
-const letters = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const drops = Array(Math.floor(canvas.width / 14)).fill(1);
-function drawMatrix() {
-  ctx.fillStyle = "rgba(0,0,0,0.1)";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#ff0000";
-  ctx.font = "14px monospace";
-  drops.forEach((y,i)=>{
-    const text = letters[Math.floor(Math.random()*letters.length)];
-    ctx.fillText(text, i*14, y*16);
-    if(y*16>canvas.height && Math.random()>0.98) drops[i]=0;
-    drops[i]++;
-  });
-}
-setInterval(drawMatrix,50);
-
-/* ---------------- PASSWORD ---------------- */
-const PANEL_PASSWORD = "sevPOGIAKO";
-function checkPassword() {
-  if(document.getElementById("pwdInput").value === PANEL_PASSWORD) {
-    document.getElementById("passwordGate").classList.add("hidden");
-    document.getElementById("mainUI").classList.remove("hidden");
-  } else alert("Wrong password.");
-}
-
-/* ---------------- RAW CREATION ---------------- */
-async function sendData(text) {
-  const res = await fetch("/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,isText:true})});
-  return res.json();
-}
-
-document.getElementById("uploadBtn").onclick = async () => {
-  const file = document.getElementById("fileInput").files[0];
-  if(!file) return alert("Select a file first");
-  const text = await file.text();
-  const data = await sendData(text);
-  showResult(data.raw);
-};
-
-document.getElementById("textBtn").onclick = async () => {
-  const text = document.getElementById("luaText").value.trim();
-  if(!text) return alert("Enter code first");
-  const data = await sendData(text);
-  showResult(data.raw);
-};
-
-function showResult(link) {
-  document.getElementById("result").classList.remove("hidden");
-  document.getElementById("rawLink").value = link;
-  document.getElementById("loadstringCmd").value = `loadstring(game:HttpGet("${link}"))()`;
-
-  document.getElementById("copyBtn").onclick = ()=>{navigator.clipboard.writeText(link); alert("Copied!")};
-  document.getElementById("copyLoadstringBtn").onclick = ()=>{navigator.clipboard.writeText(`loadstring(game:HttpGet("${link}"))()`); alert("Copied LoadString!")};
-}
-</script>
-
+    function showLink(link) {
+      const res = document.getElementById("result");
+      res.classList.remove("hidden");
+      const rawLink = document.getElementById("rawLink");
+      rawLink.textContent = link;
+      rawLink.href = link;
+      document.getElementById("copyBtn").onclick = () => {
+        navigator.clipboard.writeText(link);
+        alert("Đã copy link!");
+      };
+    }
+  </script>
 </body>
 </html>
