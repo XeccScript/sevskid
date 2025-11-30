@@ -5,151 +5,266 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>sev AntiSkid</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #000; }
-    #matrixCanvas { position: fixed; top:0; left:0; width:100%; height:100%; z-index:-1; }
-    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .card-shadow { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); }
-    .animate-in { animation: slideIn 0.3s ease; }
-    @keyframes slideIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+    body {
+      background: #000;
+      font-family: 'Poppins', sans-serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .glass {
+      backdrop-filter: blur(18px);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .slide {
+      transition: .4s ease;
+      transform: translateX(-100%);
+    }
+    .slide.open { transform: translateX(0); }
+
+    .fadein {
+      animation: fade .7s ease forwards;
+      opacity: 0;
+    }
+    @keyframes fade { to { opacity: 1; } }
+
+    .intro-card:hover {
+      transform: translateY(-3px);
+      background: rgba(255,255,255,0.12);
+    }
+
+    #editorModal {
+      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.75);
+    }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: white;
+      opacity: 0.8;
+      border-radius: 50%;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-10px); opacity: 0.8; }
+      100% { transform: translateY(110vh); opacity: 0; }
+    }
   </style>
 </head>
+<body class="text-white">
 
-<body class="text-white flex flex-col items-center p-6 min-h-screen">
+<div id="stars"></div>
 
-<canvas id="matrixCanvas"></canvas>
-
-<!-- PASSWORD GATE -->
-<div id="passwordGate" class="fixed inset-0 flex flex-col items-center justify-center bg-black/90">
-  <div class="bg-gray-900 border border-gray-700 rounded-2xl p-8 card-shadow w-full max-w-md">
-    <h1 class="text-3xl font-bold text-center text-gradient mb-6">sev AntiSkid — Access Panel</h1>
-    <input id="pwdInput" type="password" placeholder="Enter password..." 
-      class="w-full px-4 py-3 mb-4 rounded-lg bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-500 transition" />
-    <button onclick="checkPassword()" 
-      class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition transform active:scale-95 font-semibold">
-      <i class="fas fa-lock"></i> Unlock Panel
-    </button>
-  </div>
+<div class="fixed top-4 left-4 z-50 flex items-center space-x-4">
+  <img id="profileImg" src="https://i.ibb.co/BK7n4RmF/1a14e47ccd315b5e22132ba41623c806.jpg" alt="Profile" class="w-12 h-12 rounded-full border-2 border-white/20">
+  <button id="musicBtn" class="glass p-2 rounded-full hover:bg-white/10">
+    <i class="fa fa-music text-xl"></i>
+  </button>
 </div>
 
-<!-- MAIN UI -->
-<div id="mainUI" class="hidden w-full max-w-3xl mt-8">
+<audio id="bgMusic" loop>
+  <source src="https://indirect-emerald-bxd0qvhuso-ex59f9fqya.edgeone.dev/internet_money_rich_amiri_keep_it_cool_official_lyric_video_mp3_10837.mp3" type="audio/mpeg">
+</audio>
 
-  <h1 class="text-4xl font-bold text-center text-blue-400 mb-8">sev Anti-skid</h1>
+<script>
+  const musicBtn = document.getElementById('musicBtn');
+  const bgMusic = document.getElementById('bgMusic');
+  function toggleMusic() {
+    if (bgMusic.paused) {
+      bgMusic.play();
+      musicBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+    } else {
+      bgMusic.pause();
+      musicBtn.innerHTML = '<i class="fa fa-music text-xl"></i>';
+    }
+  }
+  musicBtn.addEventListener('click', toggleMusic);
+  document.body.addEventListener('click', () => { if (bgMusic.paused) bgMusic.play(); }, { once: true });
 
-  <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl card-shadow w-full space-y-6">
+  const starsContainer = document.getElementById("stars");
+  for (let i = 0; i < 150; i++) {
+    const star = document.createElement("div");
+    star.className = "star";
+    star.style.left = Math.random() * window.innerWidth + "px";
+    star.style.animationDuration = (Math.random() * 3 + 2) + "s";
+    star.style.animationDelay = Math.random() * 5 + "s";
+    starsContainer.appendChild(star);
+  }
+</script>
 
-    <!-- Upload File -->
-    <div>
-      <label class="block font-semibold mb-2">Upload Lua file:</label>
-      <input id="fileInput" type="file" accept=".lua,.txt" class="w-full p-3 mb-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-400" />
-      <button id="uploadBtn" class="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 font-semibold transition transform active:scale-95">
-        Create raw from file
-      </button>
-    </div>
+<div id="sidebar" class="slide fixed top-0 left-0 h-full w-56 glass p-6 pt-14 z-50">
+  <h2 class="text-xl font-bold mb-6">Menu</h2>
+  <button class="w-full text-left mb-4 p-2 hover:bg-white/10 rounded" onclick="showDashboard()">
+    <i class="fa fa-layer-group mr-2"></i> Dashboard
+  </button>
+  <button class="w-full text-left mb-4 p-2 hover:bg-white/10 rounded" onclick="showStorage()">
+    <i class="fa fa-box mr-2"></i> Storage
+  </button>
+  <button class="w-full text-left mt-6 p-2 hover:bg-white/10 rounded" onclick="logout()">
+    <i class="fa fa-right-from-bracket mr-2"></i> Logout
+  </button>
+</div>
 
-    <!-- Input Text -->
-    <div>
-      <label class="block font-semibold mb-2">Or input Lua code:</label>
-      <textarea id="luaText" rows="6" class="w-full p-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-400 resize-y"></textarea>
-      <button id="textBtn" class="mt-3 w-full px-4 py-3 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 font-semibold transition transform active:scale-95">
-        Create raw from text
-      </button>
-    </div>
+<button onclick="toggleSidebar()" class="fixed top-4 right-4 text-3xl z-50 p-2 glass rounded-xl">
+  <i class="fa fa-bars"></i>
+</button>
 
-    <!-- Result -->
-    <div id="result" class="hidden mt-4 p-4 bg-gray-800 rounded-lg animate-in space-y-2">
-      <p class="text-sm text-gray-300">Raw link:</p>
-      <input id="rawLink" readonly class="w-full p-2 rounded bg-gray-900 text-white font-mono cursor-pointer" />
-      <p class="text-sm text-gray-300">LoadString:</p>
-      <input id="loadstringCmd" readonly class="w-full p-2 rounded bg-gray-900 text-white font-mono cursor-pointer" />
-      <div class="flex gap-3 mt-3">
-        <button id="copyBtn" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 transition">
-          <i class="fas fa-copy"></i> Copy
-        </button>
-        <button id="copyLoadstringBtn" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 transition">
-          <i class="fas fa-copy"></i> Copy LoadString
-        </button>
-      </div>
-    </div>
+<script>
+  function toggleSidebar() { document.getElementById("sidebar").classList.toggle("open"); }
+</script>
 
-    <hr class="border-gray-700 my-5">
-
-    <!-- History -->
-    <div>
-      <h2 class="text-lg font-bold mb-3">History</h2>
-      <div id="historyList" class="space-y-2 text-gray-400 text-sm">
-        <p>No history yet</p>
-      </div>
-    </div>
-
+<div id="loginPage" class="min-h-screen flex justify-center items-center fadein">
+  <div class="glass p-10 rounded-2xl w-96">
+    <h1 class="text-3xl font-bold text-center mb-6">Welcome</h1>
+    <label class="block font-semibold mb-1">Enter Admin Password:</label>
+    <input id="adminPass" class="w-full mb-4 p-3 rounded bg-black/40 border border-white/10" placeholder="Password">
+    <button onclick="login()" class="w-full mt-2 glass p-3 rounded-xl hover:bg-white/10">Login</button>
   </div>
 </div>
 
 <script>
-/* ---------------- MATRIX RED LETTERS ---------------- */
-const canvas = document.getElementById("matrixCanvas");
-const ctx = canvas.getContext("2d");
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
-const letters = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const drops = Array(Math.floor(canvas.width / 14)).fill(1);
-function drawMatrix() {
-  ctx.fillStyle = "rgba(0,0,0,0.1)";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#ff0000";
-  ctx.font = "14px monospace";
-  drops.forEach((y,i)=>{
-    const text = letters[Math.floor(Math.random()*letters.length)];
-    ctx.fillText(text, i*14, y*16);
-    if(y*16>canvas.height && Math.random()>0.98) drops[i]=0;
-    drops[i]++;
-  });
-}
-setInterval(drawMatrix,50);
-
-/* ---------------- PASSWORD ---------------- */
-const PANEL_PASSWORD = "sevPOGI1818";
-function checkPassword() {
-  if(document.getElementById("pwdInput").value === PANEL_PASSWORD) {
-    document.getElementById("passwordGate").classList.add("hidden");
-    document.getElementById("mainUI").classList.remove("hidden");
-  } else alert("Wrong password.");
-}
-
-/* ---------------- RAW CREATION ---------------- */
-async function sendData(text) {
-  const res = await fetch("/upload",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,isText:true})});
-  return res.json();
-}
-
-document.getElementById("uploadBtn").onclick = async () => {
-  const file = document.getElementById("fileInput").files[0];
-  if(!file) return alert("Select a file first");
-  const text = await file.text();
-  const data = await sendData(text);
-  showResult(data.raw);
-};
-
-document.getElementById("textBtn").onclick = async () => {
-  const text = document.getElementById("luaText").value.trim();
-  if(!text) return alert("Enter code first");
-  const data = await sendData(text);
-  showResult(data.raw);
-};
-
-function showResult(link) {
-  document.getElementById("result").classList.remove("hidden");
-  document.getElementById("rawLink").value = link;
-  document.getElementById("loadstringCmd").value = `loadstring(game:HttpGet("${link}"))()`;
-
-  document.getElementById("copyBtn").onclick = ()=>{navigator.clipboard.writeText(link); alert("Copied!")};
-  document.getElementById("copyLoadstringBtn").onclick = ()=>{navigator.clipboard.writeText(`loadstring(game:HttpGet("${link}"))()`); alert("Copied LoadString!")};
-}
+  function login() {
+    let adminPass = document.getElementById("adminPass").value;
+    if (adminPass === "sevANTISKIDPOGI") {
+      sessionStorage.setItem("role", "admin");
+      document.getElementById("loginPage").style.display = "none";
+      document.getElementById("mainPage").style.display = "block";
+      return;
+    }
+    alert("Invalid password");
+  }
+  function logout() { sessionStorage.clear(); location.reload(); }
 </script>
+
+<div id="mainPage" class="hidden p-6 fadein">
+  <div id="dashboard">
+    <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
+    <div class="glass p-6 rounded-2xl mb-6">
+      <h3 class="text-xl font-semibold mb-4">Create Raw File</h3>
+      <input id="rawName" class="w-full p-3 mb-3 bg-black/40 rounded border border-white/10" placeholder="Raw file name">
+      <textarea id="rawContent" class="w-full p-3 mb-3 bg-black/40 rounded border border-white/10" placeholder="Enter raw content"></textarea>
+      <p class="opacity-70 mb-2 text-sm">Or upload file:</p>
+      <input type="file" id="rawFile" class="mb-4">
+      <button onclick="createRaw()" class="glass p-3 rounded-xl hover:bg-white/10">Create File</button>
+    </div>
+    <div id="resultBox" class="hidden glass p-6 rounded-xl">
+      <h3 class="text-xl font-bold mb-3">Raw Created</h3>
+      <p id="resultLink" class="opacity-80 mb-2"></p>
+      <p id="resultLoadstring" class="opacity-80 mb-4 text-sm"></p>
+      <button onclick="copyResult()" class="glass px-4 py-2 rounded hover:bg-white/10">Copy</button>
+    </div>
+  </div>
+  <div id="storage" class="hidden">
+    <h2 class="text-3xl font-bold mb-4">Storage</h2>
+    <div id="storageList" class="space-y-4"></div>
+  </div>
+</div>
+
+<div id="editorModal" class="hidden fixed inset-0 flex items-center justify-center p-6 z-50">
+  <div class="glass p-6 rounded-2xl w-full max-w-xl">
+    <h2 class="text-2xl font-bold mb-4">Edit File</h2>
+    <input id="editName" class="w-full p-3 mb-3 bg-black/40 rounded border border-white/10">
+    <textarea id="editContent" class="w-full p-3 h-52 bg-black/40 rounded border border-white/10"></textarea>
+    <div class="flex justify-end mt-4">
+      <button onclick="closeEditor()" class="mr-4 hover:text-red-300">Cancel</button>
+      <button onclick="saveEdit()" class="glass px-4 py-2 rounded hover:bg-white/10">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function sendData(text) {
+    const res = await fetch("/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, isText: true })
+    });
+    return res.json();
+  }
+
+  let files = [];
+  let editIndex = -1;
+
+  function showDashboard() { document.getElementById("dashboard").style.display = "block"; document.getElementById("storage").style.display = "none"; }
+  function showStorage() { document.getElementById("dashboard").style.display = "none"; document.getElementById("storage").style.display = "block"; updateStorage(); }
+
+  async function createRaw() {
+    let name = rawName.value;
+    let content = rawContent.value;
+    let file = rawFile.files[0];
+    if (!name) return alert("Enter name");
+    if (file) content = await file.text();
+    if (!content) return alert("Enter content or upload file");
+    await sendData(content);
+    let link = "raw://" + Math.random().toString(36).substring(2, 10);
+    files.push({ name, content, link });
+    updateStorage();
+    rawName.value = "";
+    rawContent.value = "";
+    rawFile.value = "";
+    document.getElementById("resultBox").classList.remove("hidden");
+    resultLink.textContent = "Raw Link: " + link;
+    resultLoadstring.textContent = `loadstring(game:HttpGet("${link}"))()`;
+    resultBox.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function copyResult() {
+    let text = resultLink.textContent + "\n" + resultLoadstring.textContent;
+    navigator.clipboard.writeText(text);
+    alert("Copied!");
+  }
+
+  function updateStorage() {
+    let box = document.getElementById("storageList");
+    box.innerHTML = "";
+    files.forEach((f, i) => {
+      box.innerHTML += `
+        <div class="glass p-4 rounded-xl">
+          <h3 class="text-xl font-semibold">${f.name}</h3>
+          <p class="text-sm opacity-80 mb-3">${f.link}</p>
+          <button onclick="openEditor(${i})" class="mr-3 hover:text-yellow-300">
+            <i class="fa fa-pen"></i> Edit
+          </button>
+          <button onclick="deleteFile(${i})" class="hover:text-red-400">
+            <i class="fa fa-trash"></i> Delete
+          </button>
+        </div>
+      `;
+    });
+  }
+
+  function deleteFile(i) { files.splice(i, 1); updateStorage(); }
+  function openEditor(i) { editIndex = i; editName.value = files[i].name; editContent.value = files[i].content; editorModal.classList.remove("hidden"); }
+  function closeEditor() { editorModal.classList.add("hidden"); }
+  function saveEdit() { files[editIndex].name = editName.value; files[editIndex].content = editContent.value; updateStorage(); closeEditor(); }
+</script>
+
+<div class="p-10 mt-20">
+  <h1 class="text-4xl font-bold text-center mb-10">Introduction</h1>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="intro-card glass p-6 rounded-2xl text-center">
+      <i class="fa fa-bolt text-4xl mb-4"></i>
+      <h2 class="text-xl font-bold mb-2">Fast</h2>
+      <p class="opacity-80">Instant raw creation and instant loading speed.</p>
+    </div>
+    <div class="intro-card glass p-6 rounded-2xl text-center">
+      <i class="fa fa-shield-halved text-4xl mb-4"></i>
+      <h2 class="text-xl font-bold mb-2">Secure</h2>
+      <p class="opacity-80">Your data stays protected with encrypted logic.</p>
+    </div>
+    <div class="intro-card glass p-6 rounded-2xl text-center">
+      <i class="fa fa-gears text-4xl mb-4"></i>
+      <h2 class="text-xl font-bold mb-2">How It Works</h2>
+      <p class="opacity-80">Create, store, edit, and manage your raw files smoothly.</p>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
