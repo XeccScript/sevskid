@@ -50,19 +50,35 @@
 </div>
 
 <audio id="bgMusic" loop>
-  <source src="https://indirect-emerald-bxd0qvhuso-ex59f9fqya.edgeone.dev/internet_money_rich_amiri_keep_it_cool_official_lyric_video_mp3_10837.mp3" type="audio/mpeg">
+  <source src="https://cdn.discordapp.com/attachments/1441635373615943983/1444552620730744932/internet_money_rich_amiri_keep_it_cool_official_lyric_video_mp3_10837.mp3?ex=692d1ff7&is=692bce77&hm=4430ad7c3ea28fa26a66f718e7fcc435280f3cd4ac9a12279b83fe3ecf0f4495&" type="audio/mpeg">
 </audio>
 
 <script>
   // Music toggle
   const musicBtn = document.getElementById('musicBtn');
   const bgMusic = document.getElementById('bgMusic');
+
   function toggleMusic() {
-    if (bgMusic.paused) { bgMusic.play(); musicBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>'; } 
-    else { bgMusic.pause(); musicBtn.innerHTML = '<i class="fa fa-music text-xl"></i>'; }
+    if (bgMusic.paused) {
+      bgMusic.play().catch(()=>{}); // avoid promise rejection
+      musicBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+    } else {
+      bgMusic.pause();
+      musicBtn.innerHTML = '<i class="fa fa-music text-xl"></i>';
+    }
   }
+
   musicBtn.addEventListener('click', toggleMusic);
-  document.body.addEventListener('click', () => { if (bgMusic.paused) bgMusic.play(); }, { once: true });
+
+  // Autoplay on first user interaction
+  function playMusicOnce() {
+    if (bgMusic.paused) {
+      bgMusic.play().catch(()=>{});
+      musicBtn.innerHTML = '<i class="fa fa-pause text-xl"></i>';
+    }
+    document.body.removeEventListener('click', playMusicOnce);
+  }
+  document.body.addEventListener('click', playMusicOnce, { once: true });
 
   // Stars background
   const starsContainer = document.getElementById("stars");
@@ -113,12 +129,16 @@
       sessionStorage.setItem("role", "admin");
       document.getElementById("loginPage").style.display = "none";
       document.getElementById("mainPage").style.display = "block";
-      loadFiles(); // load storage
+      loadFiles();
       return;
     }
     alert("Invalid password");
   }
-  function logout() { sessionStorage.clear(); document.getElementById("loginPage").style.display = "flex"; document.getElementById("mainPage").style.display = "none"; }
+  function logout() { 
+    sessionStorage.clear(); 
+    document.getElementById("loginPage").style.display = "flex"; 
+    document.getElementById("mainPage").style.display = "none"; 
+  }
 </script>
 
 <!-- Main page -->
@@ -187,22 +207,18 @@
     if (file) content = await file.text();
     if (!content) return alert("Enter content or upload file");
 
-    // Send to server and get the raw link
     const response = await sendData(content);
     if (!response || response.error || !response.raw) return alert("Failed to upload");
 
     let link = response.raw;
 
-    // Save to files storage
     files.push({ name, content, link });
     saveFiles();
 
-    // Clear inputs
     rawName.value = "";
     rawContent.value = "";
     rawFile.value = "";
 
-    // Show result
     document.getElementById("resultBox").classList.remove("hidden");
     resultLink.textContent = "Raw Link: " + link;
     resultLoadstring.textContent = `loadstring(game:HttpGet("${link}"))()`;
@@ -239,7 +255,6 @@
   function closeEditor() { editorModal.classList.add("hidden"); }
   function saveEdit() { files[editIndex].name = editName.value; files[editIndex].content = editContent.value; saveFiles(); updateStorage(); closeEditor(); }
 
-  // Local storage persistence
   function saveFiles() { localStorage.setItem("rawFiles", JSON.stringify(files)); }
   function loadFiles() { 
     const saved = JSON.parse(localStorage.getItem("rawFiles") || "[]");
@@ -247,7 +262,6 @@
     updateStorage(); 
   }
 
-  // Load files on page load if admin
   if(sessionStorage.getItem("role") === "admin") {
     document.getElementById("loginPage").style.display = "none";
     document.getElementById("mainPage").style.display = "block";
